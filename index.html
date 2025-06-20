@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>コメント流しデモ</title>
+<style>
+  body { margin:0; overflow:hidden; background:#000; color:#fff; }
+  #overlay { position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; }
+  .comment { position:absolute; white-space:nowrap; font-size:20px; }
+  #ui { position:absolute; bottom:10px; width:100%; text-align:center; }
+  input { margin:0 5px; }
+</style>
+</head>
+<body>
+<div id="overlay"></div>
+<div id="ui">
+  <input id="nick" placeholder="ニックネーム">
+  <input id="text" placeholder="コメント（50字まで）" maxlength="50" style="width:60%">
+  <button id="send">送信</button>
+</div>
+<script>
+function flow(text){
+  const span=document.createElement('div');
+  span.className='comment';
+  span.textContent=text;
+  const y=Math.random()*(window.innerHeight-30);
+  span.style.top=y+'px';
+  span.style.left=window.innerWidth+'px';
+  document.getElementById('overlay').appendChild(span);
+  const speed=2+Math.random()*3;
+  function anim(){
+    const x = span.offsetLeft - speed;
+    if(x + span.offsetWidth < 0){
+      span.remove();
+    } else {
+      span.style.left = x+'px';
+      requestAnimationFrame(anim);
+    }
+  }
+  requestAnimationFrame(anim);
+}
+
+document.getElementById('send').onclick=()=>{
+  const nick=document.getElementById('nick').value.trim()||'名無し';
+  const text=document.getElementById('text').value.trim();
+  if(!text)return;
+  flow(`${nick}：${text}`);
+  document.getElementById('text').value='';
+};
+</script>
+</body>
+</html>
