@@ -1,52 +1,92 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8">
-<title>コメント流しデモ</title>
-<style>
-  body { margin:0; overflow:hidden; background:#000; color:#fff; }
-  #overlay { position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; }
-  .comment { position:absolute; white-space:nowrap; font-size:20px; }
-  #ui { position:absolute; bottom:10px; width:100%; text-align:center; }
-  input { margin:0 5px; }
-</style>
+  <meta charset="UTF-8">
+  <title>コメント流しデモ</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      background: #000;
+      color: #fff;
+      font-family: sans-serif;
+    }
+    #comment-layer {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 1;
+    }
+    .comment {
+      position: absolute;
+      white-space: nowrap;
+      font-size: 24px;
+      font-weight: bold;
+      animation: move 10s linear forwards;
+    }
+    @keyframes move {
+      0% { left: 100%; }
+      100% { left: -100%; }
+    }
+    #input-area {
+      position: fixed;
+      bottom: 0;
+      width: 100%;
+      background: #222;
+      padding: 15px;
+      box-sizing: border-box;
+      z-index: 2;
+    }
+    input[type="text"] {
+      font-size: 20px;
+      padding: 10px;
+      width: 100%;
+      box-sizing: border-box;
+    }
+  </style>
 </head>
 <body>
-<div id="overlay"></div>
-<div id="ui">
-  <input id="nick" placeholder="ニックネーム">
-  <input id="text" placeholder="コメント（50字まで）" maxlength="50" style="width:60%">
-  <button id="send">送信</button>
-</div>
-<script>
-function flow(text){
-  const span=document.createElement('div');
-  span.className='comment';
-  span.textContent=text;
-  const y=Math.random()*(window.innerHeight-30);
-  span.style.top=y+'px';
-  span.style.left=window.innerWidth+'px';
-  document.getElementById('overlay').appendChild(span);
-  const speed=2+Math.random()*3;
-  function anim(){
-    const x = span.offsetLeft - speed;
-    if(x + span.offsetWidth < 0){
-      span.remove();
-    } else {
-      span.style.left = x+'px';
-      requestAnimationFrame(anim);
-    }
-  }
-  requestAnimationFrame(anim);
-}
 
-document.getElementById('send').onclick=()=>{
-  const nick=document.getElementById('nick').value.trim()||'名無し';
-  const text=document.getElementById('text').value.trim();
-  if(!text)return;
-  flow(`${nick}：${text}`);
-  document.getElementById('text').value='';
-};
+<div id="comment-layer"></div>
+
+<div id="input-area">
+  <input type="text" id="comment" placeholder="コメント（最大50文字）" maxlength="50"/>
+</div>
+
+<script>
+  const bc = new BroadcastChannel('comment_channel');
+
+  function showComment(text) {
+    const layer = document.getElementById('comment-layer');
+    const div = document.createElement('div');
+    div.className = 'comment';
+    div.style.top = Math.random() * (window.innerHeight - 30) + 'px';
+    div.textContent = text;
+    layer.appendChild(div);
+    setTimeout(() => div.remove(), 10000);
+  }
+
+  document.getElementById('comment').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      const text = e.target.value.trim();
+      if (!text) return;
+      if (text.length > 50) {
+        alert("50文字以内で入力してください");
+        return;
+      }
+      bc.postMessage(text); // 他のタブに送信
+      showComment(text);    // 自分の画面に表示
+      e.target.value = '';
+    }
+  });
+
+  bc.onmessage = (ev) => {
+    showComment(ev.data);
+  };
 </script>
+
 </body>
 </html>
